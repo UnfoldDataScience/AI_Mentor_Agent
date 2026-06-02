@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+venvAITutor/
+sessions/
+.streamlit/secrets.toml
+CLAUDE.md
+README_aman.md
