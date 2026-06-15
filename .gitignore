@@ -6,6 +6,9 @@ __pycache__/
 venv/
 venvAITutor/
 sessions/
+rag/index/
 .streamlit/secrets.toml
 CLAUDE.md
 README_aman.md
+episode_1_aman.md
+episode_2_aman.md

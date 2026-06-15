@@ -100,6 +100,17 @@ def main() -> None:
                 st.caption(f"🔧 Agent used tool: `{tool_used}`")
             st.markdown(response)
 
+            if tool_used == "search_knowledge_base" and tutor.last_retrieved_chunks:
+                with st.expander("📚 Sources retrieved"):
+                    for i, chunk in enumerate(tutor.last_retrieved_chunks, start=1):
+                        st.markdown(
+                            f"**[{i}] {chunk['source']}** · similarity {chunk['score']:.2f}"
+                        )
+                        snippet = chunk["text"][:300]
+                        if len(chunk["text"]) > 300:
+                            snippet += "..."
+                        st.caption(snippet)
+
         st.session_state.messages.append({"role": "assistant", "content": response})
         storage.save_session(
             st.session_state.session_id,
