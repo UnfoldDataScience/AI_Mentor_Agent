@@ -5,8 +5,8 @@ TOOLS = [
             "name": "generate_roadmap",
             "description": (
                 "Generate a structured, phase-by-phase learning roadmap. "
-                "Call this when the user asks for a study plan, learning path, "
-                "curriculum, or roadmap for any AI/ML topic."
+                "Call this when the user asks for a study plan, learning path, curriculum, or roadmap. "
+                "Also call this when the user says they want to learn, get into, start with, or break into any AI/ML topic."
             ),
             "parameters": {
                 "type": "object",
@@ -86,6 +86,28 @@ TOOLS = [
                     },
                 },
                 "required": ["topic", "level", "goal"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_knowledge_base",
+            "description": (
+                "Search the learner's own knowledge base — their notes, cheat sheets, "
+                "and course materials that have been indexed into this app. "
+                "Call this when the user asks you to check their notes/materials, "
+                "or asks a question that may be answered by their own indexed documents."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The search query — what information to look for in the knowledge base",
+                    },
+                },
+                "required": ["query"],
             },
         },
     },

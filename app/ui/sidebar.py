@@ -4,6 +4,7 @@ import streamlit as st
 
 from app.llm.client import OPENAI_MODELS
 from app.storage.session import SessionStorage
+from rag.vector_store import VectorStore
 
 
 def render_sidebar() -> Dict[str, Any]:
@@ -13,7 +14,7 @@ def render_sidebar() -> Dict[str, Any]:
 
     with st.sidebar:
         st.title("🎓 AI Mentor")
-        st.caption("Episode 1 — Core Chat & Features")
+        st.caption("Episodes 1 & 2 — Chat, Tools & RAG")
 
         st.divider()
 
@@ -61,6 +62,20 @@ def render_sidebar() -> Dict[str, Any]:
         if st.session_state.get("session_id"):
             msg_count = len(st.session_state.get("messages", []))
             st.caption(f"Session `{st.session_state.session_id}` · {msg_count} messages")
+
+        st.divider()
+
+        st.subheader("📚 Knowledge Base")
+        store = VectorStore()
+        if store.load() and store.chunks:
+            sources = sorted({chunk["source"] for chunk in store.chunks})
+            st.caption(f"{len(store.chunks)} chunks indexed from {len(sources)} document(s)")
+            with st.expander("Indexed documents"):
+                for source in sources:
+                    st.caption(f"- {source}")
+        else:
+            st.caption("No knowledge base indexed yet.")
+            st.caption("Run `python -m rag.build_index` to index `rag/documents/`.")
 
         st.divider()
 
@@ -138,9 +153,8 @@ def render_sidebar() -> Dict[str, Any]:
 
         st.divider()
         st.caption("Episodes coming soon:")
-        st.caption("Ep 2 · RAG  |  Ep 3 · Memory")
-        st.caption("Ep 4 · LangGraph  |  Ep 5 · MCP")
-        st.caption("Ep 6 · Observability")
+        st.caption("Ep 3 · Memory  |  Ep 4 · LangGraph")
+        st.caption("Ep 5 · MCP  |  Ep 6 · Observability")
 
     return {
         "model": model,

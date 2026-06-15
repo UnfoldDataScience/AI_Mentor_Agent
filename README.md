@@ -1,4 +1,4 @@
-# AI Mentor — Episode 1
+# AI Mentor — Episodes 1 & 2
 
 A conversational AI tutor for learning Artificial Intelligence, Machine Learning, and Data Science.
 
@@ -6,9 +6,9 @@ Built with **Python**, **Streamlit**, and the **OpenAI API** as part of a 6-epis
 
 ---
 
-## What you'll build in this episode
+## What this app can do
 
-A working AI Mentor app that:
+**Episode 1 — Agentic chat + tools**
 - Chats with you about AI/ML topics
 - Automatically decides which tool to use based on your question (agentic behaviour)
 - Generates structured learning roadmaps
@@ -16,14 +16,19 @@ A working AI Mentor app that:
 - Recommends hands-on projects for your level
 - Saves every conversation to a JSON file
 
+**Episode 2 — RAG (your own knowledge base)**
+- A fourth tool, `search_knowledge_base`, lets the agent search your own notes/documents
+- Retrieval is transparent — every answer that uses your notes shows which sources and similarity scores were used
+- Build or refresh the knowledge base with one command: `python -m rag.build_index`
+
 ---
 
 ## Series overview
 
 | Episode | What you build |
 |---|---|
-| **1 — This episode** | Agentic chat with tool use + session storage |
-| 2 | RAG — ask questions over your own documents |
+| 1 | Agentic chat with tool use + session storage |
+| **2 — This episode** | RAG — ask questions over your own documents |
 | 3 | Memory — remember things across sessions |
 | 4 | LangGraph — multi-step reasoning chains |
 | 5 | MCP — plug in external tools |
@@ -93,9 +98,17 @@ Just type naturally — the AI decides which tool to call.
 | *"I want to learn NLP from scratch"* | Agent calls the roadmap tool |
 | *"What is a transformer model?"* | Agent calls the concept explainer |
 | *"What projects should I build for computer vision?"* | Agent calls the project recommender |
+| *"Check my notes — what's cosine similarity?"* | Agent calls `search_knowledge_base` |
 | *"What's the difference between AI and ML?"* | Agent answers directly |
 
 When a tool fires, you'll see `🔧 Agent used tool: <name>` above the response.
+
+### Knowledge base (RAG)
+1. Drop `.md` / `.txt` files into `rag/documents/` — a few sample docs are included to get started
+2. Run `python -m rag.build_index` to (re)build the index whenever your documents change
+3. The sidebar shows how many chunks/documents are currently indexed
+4. When the agent answers from your notes, it cites them inline (`[1]`, `[2]`, ...) and shows a **"📚 Sources retrieved"** panel with the source file and similarity score for each chunk used
+5. If your notes don't cover the question, the agent says so and falls back to general knowledge
 
 ### Sidebar — explicit controls
 Use the sidebar forms when you want to set exact parameters (topic, level, hours/week, goal) without relying on the agent to infer them.
@@ -119,7 +132,14 @@ AITutor/
 │   ├── prompts/tutor.py    ← all prompt strings
 │   ├── storage/session.py  ← saves/loads JSON sessions
 │   └── ui/                 ← Streamlit components
-├── rag/                    ← Episode 2 (empty)
+├── rag/                    ← Episode 2
+│   ├── documents/          ← your notes (.md / .txt) — knowledge base source
+│   ├── loader.py           ← reads documents/
+│   ├── chunker.py          ← splits text into overlapping chunks
+│   ├── embeddings.py       ← OpenAI embeddings client
+│   ├── vector_store.py     ← cosine-similarity search over embeddings (numpy)
+│   ├── build_index.py      ← CLI: python -m rag.build_index
+│   └── index/              ← generated index (gitignored)
 ├── memory/                 ← Episode 3 (empty)
 ├── agents/                 ← Episode 4 (empty)
 ├── tools/                  ← Episode 5 (empty)
