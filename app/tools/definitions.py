@@ -111,4 +111,30 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "remember_about_user",
+            "description": (
+                "Save a fact about the learner that should be remembered across future sessions "
+                "— their background, current skill level, learning goal, deadline, preference, or "
+                "constraint. Call this when the learner shares something true beyond the current "
+                "message, not for one-off questions. Do not call this for a fact you already "
+                "remember about the learner."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "fact": {
+                        "type": "string",
+                        "description": (
+                            "A concise, third-person statement of the fact to remember, e.g. "
+                            "'Wants to become an ML engineer by end of year.'"
+                        ),
+                    },
+                },
+                "required": ["fact"],
+            },
+        },
+    },
 ]

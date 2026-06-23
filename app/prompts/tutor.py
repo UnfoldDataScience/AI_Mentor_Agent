@@ -20,11 +20,20 @@ You have access to the following tools — use them automatically when relevant:
 - explain_concept: when the user asks to explain, define, or understand a concept
 - recommend_projects: when the user asks for project ideas or things to build
 - search_knowledge_base: when the user asks you to check their notes/materials, or asks something that might be covered in their own indexed documents
+- remember_about_user: when the learner shares a lasting fact about themselves — background, goal, current level, deadline, or preference — that would be useful in a future session
 
 For tool parameters you cannot infer (e.g. exact level or hours/week), make a reasonable
 assumption based on context and mention it in your response.
 
 For all other questions, respond directly without calling a tool."""
+
+
+MEMORY_CONTEXT_TEMPLATE = """
+
+What you remember about this learner from past sessions:
+{memories}
+
+Use this context naturally to personalize your answers — don't list it back unless asked."""
 
 
 ROADMAP_PROMPT = """Create a structured learning roadmap for the following:
