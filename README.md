@@ -1,4 +1,4 @@
-# AI Mentor — Episodes 1 & 2
+# AI Mentor — Episodes 1, 2 & 3
 
 A conversational AI tutor for learning Artificial Intelligence, Machine Learning, and Data Science.
 
@@ -21,6 +21,12 @@ Built with **Python**, **Streamlit**, and the **OpenAI API** as part of a 6-epis
 - Retrieval is transparent — every answer that uses your notes shows which sources and similarity scores were used
 - Build or refresh the knowledge base with one command: `python -m rag.build_index`
 
+**Episode 3 — Memory (remembers you across sessions)**
+- A fifth tool, `remember_about_user`, lets the agent save lasting facts about you — background, goals, level, deadlines, preferences
+- Unlike a session (one conversation) or the knowledge base (your documents), memory is global to *you* and persists across every future session
+- Every chat is automatically given access to what's been remembered — no need to repeat yourself
+- The sidebar's **🧠 Memory** panel shows everything remembered, with a delete button per fact
+
 ---
 
 ## Series overview
@@ -28,8 +34,8 @@ Built with **Python**, **Streamlit**, and the **OpenAI API** as part of a 6-epis
 | Episode | What you build |
 |---|---|
 | 1 | Agentic chat with tool use + session storage |
-| **2 — This episode** | RAG — ask questions over your own documents |
-| 3 | Memory — remember things across sessions |
+| 2 | RAG — ask questions over your own documents |
+| **3 — This episode** | Memory — remember things across sessions |
 | 4 | LangGraph — multi-step reasoning chains |
 | 5 | MCP — plug in external tools |
 | 6 | Observability — trace and monitor everything |
@@ -99,6 +105,7 @@ Just type naturally — the AI decides which tool to call.
 | *"What is a transformer model?"* | Agent calls the concept explainer |
 | *"What projects should I build for computer vision?"* | Agent calls the project recommender |
 | *"Check my notes — what's cosine similarity?"* | Agent calls `search_knowledge_base` |
+| *"I'm a backend dev trying to break into ML by December"* | Agent calls `remember_about_user` |
 | *"What's the difference between AI and ML?"* | Agent answers directly |
 
 When a tool fires, you'll see `🔧 Agent used tool: <name>` above the response.
@@ -109,6 +116,11 @@ When a tool fires, you'll see `🔧 Agent used tool: <name>` above the response.
 3. The sidebar shows how many chunks/documents are currently indexed
 4. When the agent answers from your notes, it cites them inline (`[1]`, `[2]`, ...) and shows a **"📚 Sources retrieved"** panel with the source file and similarity score for each chunk used
 5. If your notes don't cover the question, the agent says so and falls back to general knowledge
+
+### Memory (long-term, across sessions)
+1. Mention something lasting about yourself in chat (goal, level, background, deadline) — the agent decides whether it's worth remembering and calls `remember_about_user`
+2. Every future chat — even in a brand new session — automatically gets this context, so the agent doesn't need to be reminded
+3. The sidebar's **🧠 Memory** panel lists every remembered fact; click 🗑️ next to any of them to forget it
 
 ### Sidebar — explicit controls
 Use the sidebar forms when you want to set exact parameters (topic, level, hours/week, goal) without relying on the agent to infer them.
@@ -140,7 +152,8 @@ AITutor/
 │   ├── vector_store.py     ← cosine-similarity search over embeddings (numpy)
 │   ├── build_index.py      ← CLI: python -m rag.build_index
 │   └── index/              ← generated index (gitignored)
-├── memory/                 ← Episode 3 (empty)
+├── memory/                 ← Episode 3
+│   └── store.py            ← MemoryStore — reads/writes user_memory.json (gitignored)
 ├── agents/                 ← Episode 4 (empty)
 ├── tools/                  ← Episode 5 (empty)
 └── observability/          ← Episode 6 (empty)
@@ -158,3 +171,8 @@ AITutor/
 | **Agentic loop** | Think → decide → act → return result |
 
 This episode uses a **single-step loop** (one tool per message). Multi-step chains come in Episode 4.
+
+| Term | What it means |
+|---|---|
+| **Memory** | Facts about the *learner* that persist across every session — distinct from RAG (your documents) and from a session (one conversation) |
+| **Always-on context** | Memories are injected into the system prompt on every call, so the agent doesn't need to "search" for them like it does with `search_knowledge_base` |

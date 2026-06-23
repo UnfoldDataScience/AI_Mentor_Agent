@@ -4,6 +4,7 @@ import streamlit as st
 
 from app.llm.client import OPENAI_MODELS
 from app.storage.session import SessionStorage
+from memory.store import MemoryStore
 from rag.vector_store import VectorStore
 
 
@@ -14,7 +15,7 @@ def render_sidebar() -> Dict[str, Any]:
 
     with st.sidebar:
         st.title("🎓 AI Mentor")
-        st.caption("Episodes 1 & 2 — Chat, Tools & RAG")
+        st.caption("Episodes 1-3 — Chat, Tools, RAG & Memory")
 
         st.divider()
 
@@ -76,6 +77,24 @@ def render_sidebar() -> Dict[str, Any]:
         else:
             st.caption("No knowledge base indexed yet.")
             st.caption("Run `python -m rag.build_index` to index `rag/documents/`.")
+
+        st.divider()
+
+        st.subheader("🧠 Memory")
+        memories = MemoryStore().get_all()
+        if memories:
+            st.caption(f"{len(memories)} fact(s) remembered about you")
+            with st.expander("What I remember"):
+                for m in memories:
+                    col_a, col_b = st.columns([5, 1])
+                    with col_a:
+                        st.caption(f"- {m['content']}")
+                    with col_b:
+                        if st.button("🗑️", key=f"del_mem_{m['id']}"):
+                            MemoryStore().delete(m["id"])
+                            st.rerun()
+        else:
+            st.caption("Nothing remembered yet — share your goals or background in chat.")
 
         st.divider()
 
@@ -153,8 +172,8 @@ def render_sidebar() -> Dict[str, Any]:
 
         st.divider()
         st.caption("Episodes coming soon:")
-        st.caption("Ep 3 · Memory  |  Ep 4 · LangGraph")
-        st.caption("Ep 5 · MCP  |  Ep 6 · Observability")
+        st.caption("Ep 4 · LangGraph  |  Ep 5 · MCP")
+        st.caption("Ep 6 · Observability")
 
     return {
         "model": model,
