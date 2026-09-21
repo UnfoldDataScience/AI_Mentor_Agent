@@ -81,7 +81,7 @@ def main() -> None:
 
     st.title("🎓 AI Mentor")
     st.caption(
-        f"Episode 1 · Model: **{config['model']}** · "
+        f"Episodes 1-4 · Model: **{config['model']}** · "
         f"Session: `{st.session_state.session_id}`"
     )
 
@@ -95,12 +95,14 @@ def main() -> None:
 
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                response, tool_used = tutor.chat(st.session_state.messages)
-            if tool_used:
-                st.caption(f"🔧 Agent used tool: `{tool_used}`")
+                response, tools_used = tutor.chat(st.session_state.messages)
+            if tools_used:
+                chain = " → ".join(f"`{t}`" for t in tools_used)
+                label = "tool" if len(tools_used) == 1 else "tools"
+                st.caption(f"🔧 Agent used {label}: {chain}")
             st.markdown(response)
 
-            if tool_used == "search_knowledge_base" and tutor.last_retrieved_chunks:
+            if "search_knowledge_base" in tools_used and tutor.last_retrieved_chunks:
                 with st.expander("📚 Sources retrieved"):
                     for i, chunk in enumerate(tutor.last_retrieved_chunks, start=1):
                         st.markdown(

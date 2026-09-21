@@ -1,5 +1,6 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
+from agents.graph import TutorGraph
 from app.llm.client import LLMClient
 from app.prompts.tutor import (
     CONCEPT_PROMPT,
@@ -19,7 +20,10 @@ class TutorService:
     def __init__(self, model: str = None):
         self.llm = LLMClient(model=model)
         self.memory = MemoryStore()
-        self.last_tool_used: Optional[str] = None
+        self.graph = TutorGraph(
+            model=self.llm.model, tools=TOOLS, tool_executor=self._execute_tool
+        )
+        self.last_tools_used: List[str] = []
         self.last_retrieved_chunks: List[Dict] = []
 
     def _system_prompt(self) -> str:
@@ -28,17 +32,14 @@ class TutorService:
             return SYSTEM_PROMPT
         return SYSTEM_PROMPT + MEMORY_CONTEXT_TEMPLATE.format(memories=memories)
 
-    def chat(self, messages: List[Dict]) -> Tuple[str, Optional[str]]:
-        self.last_tool_used = None
+    def chat(self, messages: List[Dict]) -> Tuple[str, List[str]]:
+        self.last_tools_used = []
         self.last_retrieved_chunks = []
-        response, tool_used = self.llm.run_agent(
-            messages=messages,
-            tools=TOOLS,
-            tool_executor=self._execute_tool,
-            system_prompt=self._system_prompt(),
+        response, tools_used = self.graph.run(
+            messages=messages, system_prompt=self._system_prompt()
         )
-        self.last_tool_used = tool_used
-        return response, tool_used
+        self.last_tools_used = tools_used
+        return response, tools_used
 
     def _execute_tool(self, tool_name: str, tool_args: Dict) -> str:
         if tool_name == "generate_roadmap":
