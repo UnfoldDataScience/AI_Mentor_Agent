@@ -5,8 +5,14 @@ from app.services.tutor import TutorService
 from app.storage.session import SessionStorage
 from app.ui.chat import render_chat_history
 from app.ui.sidebar import render_sidebar
+from tools.client import MCPClient
 
 load_dotenv()
+
+
+@st.cache_resource(show_spinner="Connecting to MCP server...")
+def _get_mcp_client() -> MCPClient:
+    return MCPClient()
 
 
 def _init_session_state() -> None:
@@ -72,8 +78,9 @@ def main() -> None:
     _init_session_state()
     storage = SessionStorage()
 
-    config = render_sidebar()
-    tutor = TutorService(model=config["model"])
+    mcp = _get_mcp_client()
+    config = render_sidebar(mcp)
+    tutor = TutorService(model=config["model"], mcp=mcp)
 
     if config["action"]:
         _handle_special_action(config["action"], config["action_data"], tutor, storage)
@@ -81,7 +88,7 @@ def main() -> None:
 
     st.title("🎓 AI Mentor")
     st.caption(
-        f"Episodes 1-4 · Model: **{config['model']}** · "
+        f"Episodes 1-5 · Model: **{config['model']}** · "
         f"Session: `{st.session_state.session_id}`"
     )
 
@@ -97,7 +104,9 @@ def main() -> None:
             with st.spinner("Thinking..."):
                 response, tools_used = tutor.chat(st.session_state.messages)
             if tools_used:
-                chain = " → ".join(f"`{t}`" for t in tools_used)
+                chain = " → ".join(
+                    f"🔌 `{t}`" if t in mcp.tool_names else f"`{t}`" for t in tools_used
+                )
                 label = "tool" if len(tools_used) == 1 else "tools"
                 st.caption(f"🔧 Agent used {label}: {chain}")
             st.markdown(response)

@@ -6,16 +6,17 @@ from app.llm.client import OPENAI_MODELS
 from app.storage.session import SessionStorage
 from memory.store import MemoryStore
 from rag.vector_store import VectorStore
+from tools.client import MCPClient
 
 
-def render_sidebar() -> Dict[str, Any]:
+def render_sidebar(mcp: MCPClient) -> Dict[str, Any]:
     storage = SessionStorage()
     action: Optional[str] = None
     action_data: Optional[Dict] = None
 
     with st.sidebar:
         st.title("🎓 AI Mentor")
-        st.caption("Episodes 1-4 — Chat, Tools, RAG, Memory & Multi-Step Reasoning")
+        st.caption("Episodes 1-5 — Chat, Tools, RAG, Memory, Multi-Step Reasoning & MCP")
 
         st.divider()
 
@@ -98,6 +99,19 @@ def render_sidebar() -> Dict[str, Any]:
 
         st.divider()
 
+        st.subheader("🔌 MCP Tools")
+        if mcp.tools:
+            st.caption(f"Connected to `{mcp.server_name}` · {len(mcp.tools)} external tool(s)")
+            with st.expander("External tools"):
+                for tool in mcp.tools:
+                    st.caption(f"- `{tool['function']['name']}`")
+        else:
+            st.caption(f"Could not connect to `{mcp.server_name}`.")
+            if mcp.error:
+                st.caption(mcp.error)
+
+        st.divider()
+
         st.subheader("🚀 Special Features")
 
         with st.expander("📍 Generate Roadmap"):
@@ -172,7 +186,7 @@ def render_sidebar() -> Dict[str, Any]:
 
         st.divider()
         st.caption("Episodes coming soon:")
-        st.caption("Ep 5 · MCP  |  Ep 6 · Observability")
+        st.caption("Ep 6 · Observability")
 
     return {
         "model": model,

@@ -1,9 +1,10 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from agents.graph import TutorGraph
 from app.llm.client import LLMClient
 from app.prompts.tutor import (
     CONCEPT_PROMPT,
+    MCP_TOOLS_TEMPLATE,
     MEMORY_CONTEXT_TEMPLATE,
     PROJECT_PROMPT,
     RAG_PROMPT,
@@ -14,23 +15,35 @@ from app.tools.definitions import TOOLS
 from memory.store import MemoryStore
 from rag.embeddings import EmbeddingClient
 from rag.vector_store import VectorStore
+from tools.client import MCPClient
 
 
 class TutorService:
-    def __init__(self, model: str = None):
+    def __init__(self, model: str = None, mcp: Optional[MCPClient] = None):
         self.llm = LLMClient(model=model)
         self.memory = MemoryStore()
+        self.mcp = mcp
+        self.mcp_tools = mcp.tools if mcp else []
         self.graph = TutorGraph(
-            model=self.llm.model, tools=TOOLS, tool_executor=self._execute_tool
+            model=self.llm.model,
+            tools=TOOLS + self.mcp_tools,
+            tool_executor=self._execute_tool,
         )
         self.last_tools_used: List[str] = []
         self.last_retrieved_chunks: List[Dict] = []
 
     def _system_prompt(self) -> str:
+        prompt = SYSTEM_PROMPT
+        if self.mcp_tools:
+            external = "\n".join(
+                f"- {t['function']['name']}: {t['function']['description']}"
+                for t in self.mcp_tools
+            )
+            prompt += MCP_TOOLS_TEMPLATE.format(tools=external)
         memories = self.memory.format_for_prompt()
-        if not memories:
-            return SYSTEM_PROMPT
-        return SYSTEM_PROMPT + MEMORY_CONTEXT_TEMPLATE.format(memories=memories)
+        if memories:
+            prompt += MEMORY_CONTEXT_TEMPLATE.format(memories=memories)
+        return prompt
 
     def chat(self, messages: List[Dict]) -> Tuple[str, List[str]]:
         self.last_tools_used = []
@@ -52,6 +65,8 @@ class TutorService:
             return self.search_knowledge_base(**tool_args)
         if tool_name == "remember_about_user":
             return self.remember_about_user(**tool_args)
+        if self.mcp and tool_name in self.mcp.tool_names:
+            return self.mcp.call_tool(tool_name, tool_args)
         return f"Unknown tool: {tool_name}"
 
     def remember_about_user(self, fact: str) -> str:
