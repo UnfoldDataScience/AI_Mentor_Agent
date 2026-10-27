@@ -15,7 +15,7 @@ def render_sidebar() -> Dict[str, Any]:
 
     with st.sidebar:
         st.title("🎓 AI Mentor")
-        st.caption("Episodes 1-3 — Chat, Tools, RAG & Memory")
+        st.caption("Episodes 1-4 — Chat, Tools, RAG, Memory & Multi-Step Reasoning")
 
         st.divider()
 
@@ -172,8 +172,7 @@ def render_sidebar() -> Dict[str, Any]:
 
         st.divider()
         st.caption("Episodes coming soon:")
-        st.caption("Ep 4 · LangGraph  |  Ep 5 · MCP")
-        st.caption("Ep 6 · Observability")
+        st.caption("Ep 5 · MCP  |  Ep 6 · Observability")
 
     return {
         "model": model,

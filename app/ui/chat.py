@@ -39,6 +39,7 @@ I'm your personal AI companion for learning **Artificial Intelligence, Machine L
 - *"Explain transformers like I'm 12 years old."*
 - *"What's the difference between supervised and unsupervised learning?"*
 - *"How do I go from Python beginner to ML engineer?"*
+- *"Explain attention, then recommend a project to practice it."* — multi-step
 
 **Select your model in the sidebar, then start chatting!**
 """

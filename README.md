@@ -1,4 +1,4 @@
-# AI Mentor — Episodes 1, 2 & 3
+# AI Mentor — Episodes 1, 2, 3 & 4
 
 A conversational AI tutor for learning Artificial Intelligence, Machine Learning, and Data Science.
 
@@ -27,6 +27,12 @@ Built with **Python**, **Streamlit**, and the **OpenAI API** as part of a 6-epis
 - Every chat is automatically given access to what's been remembered — no need to repeat yourself
 - The sidebar's **🧠 Memory** panel shows everything remembered, with a delete button per fact
 
+**Episode 4 — LangGraph (multi-step reasoning)**
+- The agentic loop is rebuilt on **LangGraph** as a graph: an `agent` node (decides what to do) and a `tools` node (executes it), looping until the model has everything it needs
+- The agent can now call **multiple tools in one turn**, one after another, and weave the results into a single combined answer — e.g. explain a concept, then recommend a project for it, in one reply
+- The `🔧 Agent used tool(s)` caption now shows the full chain, e.g. `explain_concept → recommend_projects`
+- A hard `recursion_limit` on the graph keeps the loop from running away
+
 ---
 
 ## Series overview
@@ -35,8 +41,8 @@ Built with **Python**, **Streamlit**, and the **OpenAI API** as part of a 6-epis
 |---|---|
 | 1 | Agentic chat with tool use + session storage |
 | 2 | RAG — ask questions over your own documents |
-| **3 — This episode** | Memory — remember things across sessions |
-| 4 | LangGraph — multi-step reasoning chains |
+| 3 | Memory — remember things across sessions |
+| **4 — This episode** | LangGraph — multi-step reasoning chains |
 | 5 | MCP — plug in external tools |
 | 6 | Observability — trace and monitor everything |
 
@@ -106,9 +112,11 @@ Just type naturally — the AI decides which tool to call.
 | *"What projects should I build for computer vision?"* | Agent calls the project recommender |
 | *"Check my notes — what's cosine similarity?"* | Agent calls `search_knowledge_base` |
 | *"I'm a backend dev trying to break into ML by December"* | Agent calls `remember_about_user` |
+| *"Explain attention, then recommend a project to practice it"* | Agent chains `explain_concept` → `recommend_projects` in one turn |
 | *"What's the difference between AI and ML?"* | Agent answers directly |
 
-When a tool fires, you'll see `🔧 Agent used tool: <name>` above the response.
+When a tool fires, you'll see `🔧 Agent used tool: <name>` above the response — or, for a chain,
+`🔧 Agent used tools: <name> → <name>`.
 
 ### Knowledge base (RAG)
 1. Drop `.md` / `.txt` files into `rag/documents/` — a few sample docs are included to get started
@@ -121,6 +129,12 @@ When a tool fires, you'll see `🔧 Agent used tool: <name>` above the response.
 1. Mention something lasting about yourself in chat (goal, level, background, deadline) — the agent decides whether it's worth remembering and calls `remember_about_user`
 2. Every future chat — even in a brand new session — automatically gets this context, so the agent doesn't need to be reminded
 3. The sidebar's **🧠 Memory** panel lists every remembered fact; click 🗑️ next to any of them to forget it
+
+### Multi-step reasoning (LangGraph)
+1. Ask for more than one thing in a single message — e.g. *"Explain transformers, then suggest a beginner project for them"*
+2. The agent runs a loop: think → call a tool → look at the result → decide whether it needs another tool → repeat, until it has everything it needs
+3. It combines every tool result into one coherent final answer, instead of stopping after the first tool call
+4. The caption above the response shows the full chain of tools used, in order
 
 ### Sidebar — explicit controls
 Use the sidebar forms when you want to set exact parameters (topic, level, hours/week, goal) without relying on the agent to infer them.
@@ -138,9 +152,9 @@ Use the sidebar forms when you want to set exact parameters (topic, level, hours
 AITutor/
 ├── app.py                  ← entry point
 ├── app/
-│   ├── llm/client.py       ← OpenAI wrapper (chat + agentic loop)
+│   ├── llm/client.py       ← OpenAI wrapper (single-shot chat calls)
 │   ├── tools/definitions.py← tool schemas (OpenAI function calling format)
-│   ├── services/tutor.py   ← orchestrates LLM + tools
+│   ├── services/tutor.py   ← orchestrates the graph + tools
 │   ├── prompts/tutor.py    ← all prompt strings
 │   ├── storage/session.py  ← saves/loads JSON sessions
 │   └── ui/                 ← Streamlit components
@@ -154,7 +168,8 @@ AITutor/
 │   └── index/              ← generated index (gitignored)
 ├── memory/                 ← Episode 3
 │   └── store.py            ← MemoryStore — reads/writes user_memory.json (gitignored)
-├── agents/                 ← Episode 4 (empty)
+├── agents/                 ← Episode 4
+│   └── graph.py            ← TutorGraph — LangGraph agent/tools loop, multi-step reasoning
 ├── tools/                  ← Episode 5 (empty)
 └── observability/          ← Episode 6 (empty)
 ```
@@ -170,9 +185,17 @@ AITutor/
 | **Tool call** | The model returning a structured call instead of plain text |
 | **Agentic loop** | Think → decide → act → return result |
 
-This episode uses a **single-step loop** (one tool per message). Multi-step chains come in Episode 4.
-
 | Term | What it means |
 |---|---|
 | **Memory** | Facts about the *learner* that persist across every session — distinct from RAG (your documents) and from a session (one conversation) |
 | **Always-on context** | Memories are injected into the system prompt on every call, so the agent doesn't need to "search" for them like it does with `search_knowledge_base` |
+
+| Term | What it means |
+|---|---|
+| **Graph** | The agentic loop expressed as nodes (`agent`, `tools`) and edges, instead of one hardcoded round of "call the model, maybe call one tool, done" |
+| **State** | The running list of messages (`AgentState`) that flows through every node and accumulates as the loop progresses |
+| **Multi-step reasoning** | The model can call a tool, see its result, and decide to call *another* tool before answering — instead of being limited to one tool per message |
+| **Recursion limit** | A hard cap on how many times the graph can loop `agent ↔ tools`, so a confused model can't loop forever |
+
+Episodes 1–3 used a **single-step loop** (at most one tool per message). Episode 4 replaces
+that loop with a LangGraph graph, so the agent can chain several tools together in one turn.
