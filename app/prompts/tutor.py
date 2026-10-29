@@ -28,6 +28,15 @@ assumption based on context and mention it in your response.
 For all other questions, respond directly without calling a tool."""
 
 
+MCP_TOOLS_TEMPLATE = """
+
+You also have external tools connected through MCP (they run in a separate server and call
+live APIs) — use them when the learner wants real, up-to-date sources rather than your own knowledge:
+{tools}
+
+When you use them, cite the real titles/repos and include their links. Never invent papers or repos."""
+
+
 MEMORY_CONTEXT_TEMPLATE = """
 
 What you remember about this learner from past sessions:

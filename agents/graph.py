@@ -2,10 +2,15 @@ from typing import Annotated, Callable, Dict, List, Tuple, TypedDict
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_openai import ChatOpenAI
+from langgraph.errors import GraphRecursionError
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 
 RECURSION_LIMIT = 15
+RECURSION_LIMIT_MESSAGE = (
+    "I got stuck going back and forth between tools and hit my step limit. "
+    "Could you rephrase or break your request into smaller parts?"
+)
 
 
 class AgentState(TypedDict):
@@ -31,7 +36,10 @@ class TutorGraph:
         last_message = state["messages"][-1]
         results = []
         for tool_call in last_message.tool_calls:
-            output = self.tool_executor(tool_call["name"], tool_call["args"])
+            try:
+                output = self.tool_executor(tool_call["name"], tool_call["args"])
+            except Exception as e:
+                output = f"Tool '{tool_call['name']}' failed: {type(e).__name__}: {e}"
             results.append(
                 ToolMessage(
                     content=output,
@@ -66,10 +74,13 @@ class TutorGraph:
             elif message["role"] == "assistant":
                 lc_messages.append(AIMessage(content=message["content"]))
 
-        final_state = self.graph.invoke(
-            {"messages": lc_messages},
-            config={"recursion_limit": RECURSION_LIMIT},
-        )
+        try:
+            final_state = self.graph.invoke(
+                {"messages": lc_messages},
+                config={"recursion_limit": RECURSION_LIMIT},
+            )
+        except GraphRecursionError:
+            return RECURSION_LIMIT_MESSAGE, []
 
         tools_used = [
             message.name

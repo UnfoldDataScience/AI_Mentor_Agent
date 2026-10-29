@@ -40,6 +40,8 @@ I'm your personal AI companion for learning **Artificial Intelligence, Machine L
 - *"What's the difference between supervised and unsupervised learning?"*
 - *"How do I go from Python beginner to ML engineer?"*
 - *"Explain attention, then recommend a project to practice it."* — multi-step
+- *"Find me the key research papers on diffusion models."* — external tool via MCP
+- *"Show me popular GitHub repos for learning RAG."* — external tool via MCP
 
 **Select your model in the sidebar, then start chatting!**
 """
