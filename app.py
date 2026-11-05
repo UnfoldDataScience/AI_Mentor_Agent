@@ -5,6 +5,7 @@ from app.services.tutor import TutorService
 from app.storage.session import SessionStorage
 from app.ui.chat import render_chat_history
 from app.ui.sidebar import render_sidebar
+from observability.tracing import trace_turn
 from tools.client import MCPClient
 
 load_dotenv()
@@ -30,32 +31,35 @@ def _handle_special_action(
     storage: SessionStorage,
 ) -> None:
     with st.spinner("Generating response..."):
-        if action == "roadmap":
-            user_msg = (
-                f"Generate a learning roadmap for **{data['topic']}**\n"
-                f"- Level: {data['level']}\n"
-                f"- Goal: {data['goal']}\n"
-                f"- Time available: {data['time_per_week']} hours/week"
-            )
-            response = tutor.generate_roadmap(**data)
+        with trace_turn(f"sidebar-{action}", st.session_state.session_id, data) as turn:
+            if action == "roadmap":
+                user_msg = (
+                    f"Generate a learning roadmap for **{data['topic']}**\n"
+                    f"- Level: {data['level']}\n"
+                    f"- Goal: {data['goal']}\n"
+                    f"- Time available: {data['time_per_week']} hours/week"
+                )
+                response = tutor.generate_roadmap(**data)
 
-        elif action == "concept":
-            user_msg = (
-                f"Explain the concept: **{data['concept']}** "
-                f"(Level: {data['level']})"
-            )
-            response = tutor.explain_concept(**data)
+            elif action == "concept":
+                user_msg = (
+                    f"Explain the concept: **{data['concept']}** "
+                    f"(Level: {data['level']})"
+                )
+                response = tutor.explain_concept(**data)
 
-        elif action == "projects":
-            user_msg = (
-                f"Recommend projects for learning **{data['topic']}**\n"
-                f"- Level: {data['level']}\n"
-                f"- Goal: {data['goal']}"
-            )
-            response = tutor.recommend_projects(**data)
+            elif action == "projects":
+                user_msg = (
+                    f"Recommend projects for learning **{data['topic']}**\n"
+                    f"- Level: {data['level']}\n"
+                    f"- Goal: {data['goal']}"
+                )
+                response = tutor.recommend_projects(**data)
 
-        else:
-            return
+            else:
+                return
+
+            turn.update(output=response)
 
     st.session_state.messages.append({"role": "user", "content": user_msg})
     st.session_state.messages.append({"role": "assistant", "content": response})
@@ -88,7 +92,7 @@ def main() -> None:
 
     st.title("🎓 AI Mentor")
     st.caption(
-        f"Episodes 1-5 · Model: **{config['model']}** · "
+        f"Episodes 1-6 · Model: **{config['model']}** · "
         f"Session: `{st.session_state.session_id}`"
     )
 
@@ -102,7 +106,10 @@ def main() -> None:
 
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                response, tools_used = tutor.chat(st.session_state.messages)
+                response, tools_used = tutor.chat(
+                    st.session_state.messages,
+                    session_id=st.session_state.session_id,
+                )
             if tools_used:
                 chain = " → ".join(
                     f"🔌 `{t}`" if t in mcp.tool_names else f"`{t}`" for t in tools_used
@@ -121,6 +128,9 @@ def main() -> None:
                         if len(chunk["text"]) > 300:
                             snippet += "..."
                         st.caption(snippet)
+
+            if tutor.last_trace_url:
+                st.caption(f"🔭 [View this turn in Langfuse]({tutor.last_trace_url})")
 
         st.session_state.messages.append({"role": "assistant", "content": response})
         storage.save_session(
