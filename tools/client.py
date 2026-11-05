@@ -5,6 +5,8 @@ from typing import Dict, List
 
 from mcp import ClientSession, StdioServerParameters, stdio_client
 
+from observability.tracing import mark_error
+
 SERVER_NAME = "ai-mentor-research"
 SERVER_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "server.py")
 TIMEOUT_SECONDS = 30
@@ -59,5 +61,7 @@ class MCPClient:
                     block.text for block in result.content if getattr(block, "type", "") == "text"
                 )
                 if result.is_error:
-                    return f"External tool '{name}' returned an error: {text}"
+                    message = f"External tool '{name}' returned an error: {text}"
+                    mark_error(message)
+                    return message
                 return text

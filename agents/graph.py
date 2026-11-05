@@ -6,6 +6,8 @@ from langgraph.errors import GraphRecursionError
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 
+from observability.tracing import graph_callbacks, mark_error, trace_tool
+
 RECURSION_LIMIT = 15
 RECURSION_LIMIT_MESSAGE = (
     "I got stuck going back and forth between tools and hit my step limit. "
@@ -36,10 +38,13 @@ class TutorGraph:
         last_message = state["messages"][-1]
         results = []
         for tool_call in last_message.tool_calls:
-            try:
-                output = self.tool_executor(tool_call["name"], tool_call["args"])
-            except Exception as e:
-                output = f"Tool '{tool_call['name']}' failed: {type(e).__name__}: {e}"
+            with trace_tool(tool_call["name"], tool_call["args"]) as span:
+                try:
+                    output = self.tool_executor(tool_call["name"], tool_call["args"])
+                except Exception as e:
+                    output = f"Tool '{tool_call['name']}' failed: {type(e).__name__}: {e}"
+                    mark_error(output)
+                span.update(output=output)
             results.append(
                 ToolMessage(
                     content=output,
@@ -77,9 +82,14 @@ class TutorGraph:
         try:
             final_state = self.graph.invoke(
                 {"messages": lc_messages},
-                config={"recursion_limit": RECURSION_LIMIT},
+                config={
+                    "recursion_limit": RECURSION_LIMIT,
+                    "callbacks": graph_callbacks(),
+                    "run_name": "tutor-graph",
+                },
             )
         except GraphRecursionError:
+            mark_error(RECURSION_LIMIT_MESSAGE)
             return RECURSION_LIMIT_MESSAGE, []
 
         tools_used = [

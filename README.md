@@ -1,4 +1,4 @@
-# AI Mentor — Episodes 1–5
+# AI Mentor — Episodes 1–6
 
 A conversational AI tutor for learning Artificial Intelligence, Machine Learning, and Data Science.
 
@@ -40,6 +40,14 @@ Built with **Python**, **Streamlit**, and the **OpenAI API** as part of a 6-epis
 - External tools are marked with 🔌 in the tool caption, and the sidebar's **🔌 MCP Tools** panel shows the connected server and its tools
 - A failing tool (bad arguments, API down) no longer crashes the app — the error is handed back to the agent as the tool's result
 
+**Episode 6 — Observability (Langfuse)**
+- Every chat turn becomes a **trace** in [Langfuse](https://langfuse.com), showing each graph step, model call and tool call with its timing, input and output
+- Tokens and cost are recorded for every model and embedding call, including the ones made inside tools
+- Failed tools are flagged as `ERROR` on the trace, even when the agent recovers and the user never sees the failure
+- All the turns in a conversation are grouped into one Langfuse **session**
+- A `🔭 View this turn in Langfuse` link appears under each chat answer, and the sidebar's **🔭 Observability** panel shows whether tracing is on
+- Tracing is optional — without Langfuse keys it switches off and the app works as before
+
 ---
 
 ## Series overview
@@ -50,8 +58,8 @@ Built with **Python**, **Streamlit**, and the **OpenAI API** as part of a 6-epis
 | 2 | RAG — ask questions over your own documents |
 | 3 | Memory — remember things across sessions |
 | 4 | LangGraph — multi-step reasoning chains |
-| **5 — This episode** | MCP — plug in external tools |
-| 6 | Observability — trace and monitor everything |
+| 5 | MCP — plug in external tools |
+| **6 — This episode** | Observability — trace and monitor everything |
 
 ---
 
@@ -60,6 +68,7 @@ Built with **Python**, **Streamlit**, and the **OpenAI API** as part of a 6-epis
 ### Prerequisites
 - Python 3.10+
 - An [OpenAI API key](https://platform.openai.com/api-keys)
+- Optional: a free [Langfuse](https://cloud.langfuse.com) project, for tracing
 
 ### 1. Clone / navigate to the project
 
@@ -95,6 +104,14 @@ Open `.env` and add your key:
 
 ```
 OPENAI_API_KEY=sk-...your-key-here...
+```
+
+To turn on tracing, also add the keys from your Langfuse project (**Settings → API Keys**), using the base URL for your Langfuse region:
+
+```
+LANGFUSE_PUBLIC_KEY=pk-lf-...
+LANGFUSE_SECRET_KEY=sk-lf-...
+LANGFUSE_BASE_URL=https://cloud.langfuse.com
 ```
 
 ### 5. Run the app
@@ -153,6 +170,14 @@ When a tool fires, you'll see `🔧 Agent used tool: <name>` above the response 
 
 The GitHub search API allows ~10 unauthenticated requests per minute; arXiv needs no key either.
 
+### Observability (Langfuse)
+1. Add your Langfuse keys to `.env` and restart the app — the sidebar's **🔭 Observability** panel confirms tracing is on
+2. Send a chat message, then click `🔭 View this turn in Langfuse` under the answer (traces are sent in the background, so one may take a few seconds to appear)
+3. Read the trace from top to bottom to see each step, how long it took and what it cost
+4. Open **Sessions** in Langfuse to see a whole conversation, using the session ID shown in the app's header
+
+**Privacy:** with tracing on, your messages, full prompts (including remembered facts about you) and tool results, including chunks of your documents, are stored in Langfuse. Leave the keys out if you don't want that, or self-host Langfuse.
+
 ### Sidebar — explicit controls
 Use the sidebar forms when you want to set exact parameters (topic, level, hours/week, goal) without relying on the agent to infer them.
 
@@ -190,7 +215,8 @@ AITutor/
 ├── tools/                  ← Episode 5
 │   ├── server.py           ← MCP server (separate process) — arXiv + GitHub tools
 │   └── client.py           ← MCPClient — discovers + calls MCP tools over stdio
-└── observability/          ← Episode 6 (empty)
+└── observability/          ← Episode 6
+    └── tracing.py          ← Langfuse helpers — traces, tool spans, model call spans
 ```
 
 ---
@@ -228,3 +254,14 @@ that loop with a LangGraph graph, so the agent can chain several tools together 
 
 Episodes 1–4 defined every tool inside the app. Episode 5 adds tools the app *discovers*
 from a separate MCP server, and the agent uses them exactly like its built-in tools.
+
+| Term | What it means |
+|---|---|
+| **Observability** | Being able to see what your agent did and why, from the records it leaves behind, instead of guessing or adding print statements |
+| **Trace** | The full record of one user message, from start to finish |
+| **Span** | One timed step inside a trace; spans nest, e.g. a tool inside a graph step |
+| **Generation** | A span for a model call, which also records tokens and cost |
+| **Session** | All the traces from one conversation, grouped together |
+
+Episodes 1–5 made the agent more capable. Episode 6 doesn't change what it does; it makes
+everything it does visible.

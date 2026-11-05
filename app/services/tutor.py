@@ -13,6 +13,7 @@ from app.prompts.tutor import (
 )
 from app.tools.definitions import TOOLS
 from memory.store import MemoryStore
+from observability.tracing import current_trace_url, trace_turn
 from rag.embeddings import EmbeddingClient
 from rag.vector_store import VectorStore
 from tools.client import MCPClient
@@ -31,6 +32,7 @@ class TutorService:
         )
         self.last_tools_used: List[str] = []
         self.last_retrieved_chunks: List[Dict] = []
+        self.last_trace_url: Optional[str] = None
 
     def _system_prompt(self) -> str:
         prompt = SYSTEM_PROMPT
@@ -45,12 +47,15 @@ class TutorService:
             prompt += MEMORY_CONTEXT_TEMPLATE.format(memories=memories)
         return prompt
 
-    def chat(self, messages: List[Dict]) -> Tuple[str, List[str]]:
+    def chat(self, messages: List[Dict], session_id: str = None) -> Tuple[str, List[str]]:
         self.last_tools_used = []
         self.last_retrieved_chunks = []
-        response, tools_used = self.graph.run(
-            messages=messages, system_prompt=self._system_prompt()
-        )
+        with trace_turn("chat-turn", session_id, messages[-1]["content"]) as turn:
+            response, tools_used = self.graph.run(
+                messages=messages, system_prompt=self._system_prompt()
+            )
+            turn.update(output=response, metadata={"tools_used": tools_used})
+            self.last_trace_url = current_trace_url()
         self.last_tools_used = tools_used
         return response, tools_used
 

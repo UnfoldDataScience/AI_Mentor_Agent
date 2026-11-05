@@ -5,6 +5,7 @@ import streamlit as st
 from app.llm.client import OPENAI_MODELS
 from app.storage.session import SessionStorage
 from memory.store import MemoryStore
+from observability.tracing import TRACING_ENABLED
 from rag.vector_store import VectorStore
 from tools.client import MCPClient
 
@@ -16,7 +17,9 @@ def render_sidebar(mcp: MCPClient) -> Dict[str, Any]:
 
     with st.sidebar:
         st.title("🎓 AI Mentor")
-        st.caption("Episodes 1-5 — Chat, Tools, RAG, Memory, Multi-Step Reasoning & MCP")
+        st.caption(
+            "Episodes 1-6 — Chat, Tools, RAG, Memory, Multi-Step Reasoning, MCP & Observability"
+        )
 
         st.divider()
 
@@ -112,6 +115,14 @@ def render_sidebar(mcp: MCPClient) -> Dict[str, Any]:
 
         st.divider()
 
+        st.subheader("🔭 Observability")
+        if TRACING_ENABLED:
+            st.caption("Langfuse tracing is on — every turn is recorded.")
+        else:
+            st.caption("Tracing is off. Add your Langfuse keys to `.env` to turn it on.")
+
+        st.divider()
+
         st.subheader("🚀 Special Features")
 
         with st.expander("📍 Generate Roadmap"):
@@ -183,10 +194,6 @@ def render_sidebar(mcp: MCPClient) -> Dict[str, Any]:
                     }
                 else:
                     st.warning("Please enter a topic first.")
-
-        st.divider()
-        st.caption("Episodes coming soon:")
-        st.caption("Ep 6 · Observability")
 
     return {
         "model": model,
